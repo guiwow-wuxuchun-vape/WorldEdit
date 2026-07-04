@@ -1,4 +1,5 @@
 name: Gradle Build
+
 on:
   push:
     branches:
@@ -6,6 +7,18 @@ on:
       - 'version/*'
   pull_request:
   merge_group:
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: '上传产物？'
+        required: false
+        default: true
+        type: boolean
+      custom_args:
+        description: '额外Gradle参数'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build:
@@ -31,7 +44,7 @@ jobs:
         cache-read-only: ${{ !(github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/version/')) }}
 
     - name: Execute Gradle build
-      run: ./gradlew build -s
+      run: ./gradlew build -s ${{ github.event.inputs.custom_args }}
 
     - uses: actions/upload-artifact@v6
       name: Archive Reports
@@ -47,3 +60,9 @@ jobs:
         name: logs for ${{ matrix.os }}
         path: '**/*.log'
 
+    - uses: actions/upload-artifact@v6
+      name: Archive Build Artifacts
+      if: ${{ github.event.inputs.upload_artifacts != 'false' }}
+      with:
+        name: build artifacts for ${{ matrix.os }}
+        path: '**/build/libs/*.jar'
